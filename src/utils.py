@@ -23,19 +23,19 @@ from sklearn.metrics.pairwise import cosine_similarity
 
 nlp = spacy.load("en_core_web_sm")
 
+#Function to remove links in preprocessing
 def remove_links_async(text):
     url_pattern = re.compile(r'https?://\S+|www\.\S+')
     text_without_links = re.sub(url_pattern, '', text)
     return text_without_links
 
+# Extract text and add spaces before new lines
 def extract_text_with_spaces(html):
     soup = BeautifulSoup(html, "html.parser")
-
-    # Extract text and add spaces before new lines
     text_with_spaces = ' '.join([text.strip() for text in soup.stripped_strings])
-
     return text_with_spaces
 
+#Function to preprocess text
 def preprocess_text(text, custom_stop_words_file=r'C:\Users\Pravallika Molleti\resume-skills-matcher\Resume-skills-matcher\data\stopwords.txt'):
     text = text.lower()
     text = remove_links_async(text)
@@ -63,6 +63,7 @@ def preprocess_text(text, custom_stop_words_file=r'C:\Users\Pravallika Molleti\r
     cleaned_text = ' '.join(cleaned_tokens)
     return cleaned_text
 
+#Function to extract tect from pdf or doc resume
 def extract_text_from_pdf_or_doc(file_path):
     try:
         text = ''
@@ -92,6 +93,7 @@ def extract_text_from_pdf_or_doc(file_path):
         print(f"Error processing file: {e}")
         return None
 
+#Function to extract job description from url
 def extract_text_from_url(url):
     headers = {
         'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/107.0.0.0 Safari/537.36',
@@ -119,11 +121,13 @@ def extract_text_from_url(url):
         print("Error while retrieving text from the URL:", str(e))
         return ('None', 'None')  
 
+#Function to calculate Bag Of Words
 def calculate_bow(resume_text, job_description):
     vectorizer = CountVectorizer()
     vectors = vectorizer.fit_transform([resume_text, job_description])
     return vectors
 
+#Function to calculate cosine similarity
 def calculate_similarity(vectors):
     similarity = cosine_similarity(vectors)
     return similarity[0][1]
@@ -142,6 +146,7 @@ def preprocess_job_descriptions(df):
     return df
 
 @lru_cache(maxsize=None)
+# Function to extract words and calculate TF-IDF words from similar jobs from the job_description.csv document corpus
 def calculate_tfidf_similarity_cached(url, file_path=r'C:\Users\Pravallika Molleti\resume-skills-matcher\Resume-skills-matcher\data\Job_descriptions.csv', similarity_threshold=40, max_features=1000):
     df = pd.read_csv(file_path)
     
@@ -193,6 +198,7 @@ def calculate_tfidf_similarity_cached(url, file_path=r'C:\Users\Pravallika Molle
 
     return all_terms
 
+#Function to reorder skills in the order of TF-IDF score
 def reorder_skills(skill_list,url):
     all_terms = calculate_tfidf_similarity_cached(url)
     ordered_skills = [skill for skill in all_terms if skill in skill_list]
@@ -200,6 +206,7 @@ def reorder_skills(skill_list,url):
     ordered_skills.extend(not_present_skills)
     return ordered_skills
 
+#Function to sort the ordered skills by pos by putting skills at top (proper nouns as per pos)
 def sort_skills_by_pos(word_list):
     # Function to get POS tags for each word
     def get_pos(word):
